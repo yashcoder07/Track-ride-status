@@ -1,0 +1,6 @@
+{
+  "name": "Track My Ride",
+  "description": "Bicycle rent duration tracker and inventory manager with customized pricing plans.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
