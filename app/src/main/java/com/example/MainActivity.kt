@@ -91,10 +91,18 @@ fun MainAppContent(viewModel: CycleViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .testTag("app_main_scaffold"),
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
+            val navItemColors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                indicatorColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)
+            )
             NavigationBar(
                 modifier = Modifier.testTag("main_navigation_bar"),
-                containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                containerColor = MaterialTheme.colorScheme.surface
             ) {
                 NavigationBarItem(
                     selected = currentTab == "TRACKER",
@@ -114,10 +122,7 @@ fun MainAppContent(viewModel: CycleViewModel) {
                         }
                     },
                     label = { Text("Active") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
+                    colors = navItemColors,
                     modifier = Modifier.testTag("nav_tab_tracker")
                 )
 
@@ -131,10 +136,7 @@ fun MainAppContent(viewModel: CycleViewModel) {
                         )
                     },
                     label = { Text("Bicycles") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
+                    colors = navItemColors,
                     modifier = Modifier.testTag("nav_tab_inventory")
                 )
 
@@ -148,10 +150,7 @@ fun MainAppContent(viewModel: CycleViewModel) {
                         )
                     },
                     label = { Text("History") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
+                    colors = navItemColors,
                     modifier = Modifier.testTag("nav_tab_history")
                 )
 
@@ -165,10 +164,7 @@ fun MainAppContent(viewModel: CycleViewModel) {
                         )
                     },
                     label = { Text("Analytics") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
+                    colors = navItemColors,
                     modifier = Modifier.testTag("nav_tab_analytics")
                 )
             }
@@ -190,14 +186,7 @@ fun MainAppContent(viewModel: CycleViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.background,
-                            MaterialTheme.colorScheme.surfaceContainerLowest
-                        )
-                    )
-                )
+                .background(MaterialTheme.colorScheme.background)
         ) {
             // High-fidelity dynamic header with stats dashboard
             HeaderStatsDashboard(
@@ -364,13 +353,13 @@ fun HeaderStatsDashboard(
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = Color.Transparent
         ),
         elevation = CardDefaults.elevatedCardElevation(
-            defaultElevation = 3.dp
+            defaultElevation = 0.dp
         )
     ) {
         Column(
@@ -465,15 +454,15 @@ fun StatItem(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (highlight) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                tint = if (highlight) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
                 text = value,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = if (highlight) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.tertiary
             )
         }
         Text(
@@ -664,9 +653,9 @@ fun ActiveRideCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(12.dp)
+                            .size(8.dp)
                             .clip(CircleShape)
-                            .background(if (isOverTime) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+                            .background(if (isOverTime) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
@@ -750,7 +739,7 @@ fun ActiveRideCard(
                         text = String.format("₹%.2f", livePreciseCost),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.ExtraBold,
-                        color = if (isOverTime) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary
+                        color = if (isOverTime) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary
                     )
                 }
             }
@@ -786,7 +775,7 @@ fun ActiveRideCard(
                         text = String.format("₹%.0f", liveBlockCost),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isOverTime) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                        color = if (isOverTime) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary
                     )
                 }
             }
@@ -1023,9 +1012,10 @@ fun BicycleCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(24.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(bikeColor)
+                            .width(4.dp)
+                            .height(20.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(MaterialTheme.colorScheme.secondary)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
@@ -1087,7 +1077,7 @@ fun BicycleCard(
                         text = String.format("₹%.0f / %dmints", bicycle.rate, bicycle.intervalMinutes),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.tertiary
                     )
                 }
 
@@ -1098,7 +1088,7 @@ fun BicycleCard(
                         containerColor = if (isRenting) {
                             MaterialTheme.colorScheme.errorContainer
                         } else {
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
                         }
                     ),
                     shape = RoundedCornerShape(8.dp)
@@ -1122,7 +1112,7 @@ fun BicycleCard(
                     .fillMaxWidth()
                     .testTag("start_ride_for_${bicycle.id}"),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = bikeColor,
+                    containerColor = MaterialTheme.colorScheme.primary,
                     disabledContainerColor = MaterialTheme.colorScheme.outlineVariant
                 )
             ) {
@@ -1200,8 +1190,8 @@ fun HistoryTabContent(
                 Text(
                     text = String.format("Total: ₹%.0f", sumTotal),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.tertiary
                 )
             }
 
@@ -1250,11 +1240,11 @@ fun HistoryRideCard(ride: Ride) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.DirectionsBike,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.secondary)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
@@ -1269,7 +1259,7 @@ fun HistoryRideCard(ride: Ride) {
                     text = String.format("₹%.0f", ride.finalCost ?: 0.0),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.tertiary
                 )
             }
 
@@ -2141,7 +2131,7 @@ fun KpiMetricCard(
                 text = value,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
-                color = if (isHighlight) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.tertiary
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
@@ -2377,9 +2367,9 @@ fun BikeRevenueShareRow(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(10.dp)
+                        .size(8.dp)
                         .clip(CircleShape)
-                        .background(color)
+                        .background(MaterialTheme.colorScheme.secondary)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -2391,8 +2381,8 @@ fun BikeRevenueShareRow(
             Text(
                 text = String.format("₹%.0f (%d rentals)", revenue, bookings),
                 style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.tertiary
             )
         }
 
@@ -2414,7 +2404,7 @@ fun BikeRevenueShareRow(
                         .fillMaxHeight()
                         .fillMaxWidth(progressWidthFraction)
                         .background(
-                            color = color,
+                            color = MaterialTheme.colorScheme.secondary,
                             shape = RoundedCornerShape(4.dp)
                         )
                 )
