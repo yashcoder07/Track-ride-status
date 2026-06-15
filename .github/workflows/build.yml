@@ -11,6 +11,8 @@ jobs:
   build:
     name: Build & Release APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout Code
@@ -58,3 +60,16 @@ jobs:
           name: bike-rent-tracker-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      - name: Create or Update GitHub Release
+        if: github.event_name == 'push'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="v1.0.${{ github.run_number }}"
+          echo "Creating Release $TAG_NAME..."
+          gh release create "$TAG_NAME" \
+            app/build/outputs/apk/debug/app-debug.apk \
+            --title "Build v1.0.${{ github.run_number }}" \
+            --notes "Automated compiled debug APK for commit ${{ github.sha }}." \
+            --generate-notes || true
