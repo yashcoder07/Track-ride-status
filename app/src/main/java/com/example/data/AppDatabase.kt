@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Bicycle::class, Ride::class], version = 1, exportSchema = false)
+@Database(entities = [Bicycle::class, Ride::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun bicycleDao(): BicycleDao
     abstract fun rideDao(): RideDao

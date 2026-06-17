@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -55,7 +56,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MyApplicationTheme {
+            val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+            val useDarkTheme = when (themeMode) {
+                "LIGHT" -> false
+                "DARK" -> true
+                else -> isSystemInDarkTheme()
+            }
+
+            MyApplicationTheme(darkTheme = useDarkTheme) {
                 // Initialize default database records on first run
                 LaunchedEffect(Unit) {
                     viewModel.insertDefaultsIfNeeded()
@@ -78,6 +86,7 @@ fun MainAppContent(viewModel: CycleViewModel) {
     val rides by viewModel.rides.collectAsStateWithLifecycle()
     val activeRides by viewModel.activeRides.collectAsStateWithLifecycle()
     val tickerValue by viewModel.ticker.collectAsStateWithLifecycle()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
 
     var currentTab by remember { mutableStateOf("TRACKER") } // "TRACKER", "INVENTORY", "HISTORY", "ANALYTICS"
     var showAddBikeDialog by remember { mutableStateOf(false) }
@@ -85,6 +94,7 @@ fun MainAppContent(viewModel: CycleViewModel) {
 
     var bikeToDelete by remember { mutableStateOf<Bicycle?>(null) }
     var rideToStop by remember { mutableStateOf<Ride?>(null) }
+    var rideNote by remember(rideToStop) { mutableStateOf("") }
     var rideToCancel by remember { mutableStateOf<Ride?>(null) }
 
     Scaffold(
@@ -192,7 +202,9 @@ fun MainAppContent(viewModel: CycleViewModel) {
             HeaderStatsDashboard(
                 bicyclesCount = bicycles.size,
                 activeRidesCount = activeRides.size,
-                totalEarnings = rides.filter { it.endTime != null && it.finalCost != null }.sumOf { it.finalCost ?: 0.0 }
+                totalEarnings = rides.filter { it.endTime != null && it.finalCost != null }.sumOf { it.finalCost ?: 0.0 },
+                themeMode = themeMode,
+                onThemeModeChange = { viewModel.setThemeMode(it) }
             )
 
             // Content switching based on tab
@@ -291,15 +303,36 @@ fun MainAppContent(viewModel: CycleViewModel) {
             icon = { Icon(Icons.Default.Stop, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
             title = { Text("Stop & Complete Ride?", fontWeight = FontWeight.Bold) },
             text = {
-                val minsVal = durationSecs / 60
-                val secsVal = durationSecs % 60
-                Text("Do you want to stop the rent session for '${rideToStop?.bikeName}'?\n\nDuration: ${minsVal}m ${secsVal}s\nEstimated Fee: ₹${String.format("%.0f", blockCost)}")
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    val minsVal = durationSecs / 60
+                    val secsVal = durationSecs % 60
+                    Text(
+                        text = "Do you want to stop the rent session for '${rideToStop?.bikeName}'?\n\nDuration: ${minsVal}m ${secsVal}s\nEstimated Fee: ₹${String.format("%.0f", blockCost)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    
+                    OutlinedTextField(
+                        value = rideNote,
+                        onValueChange = { rideNote = it },
+                        label = { Text("Ride Note (optional)") },
+                        placeholder = { Text("E.g., route details, bike handling, issues...") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("ride_stop_note_input"),
+                        singleLine = false,
+                        maxLines = 3
+                    )
+                }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         rideToStop?.let {
-                            viewModel.stopRide(it)
+                            viewModel.stopRide(it, rideNote)
                             activeReceiptToShow = it
                         }
                         rideToStop = null
@@ -348,7 +381,9 @@ fun MainAppContent(viewModel: CycleViewModel) {
 fun HeaderStatsDashboard(
     bicyclesCount: Int,
     activeRidesCount: Int,
-    totalEarnings: Double
+    totalEarnings: Double,
+    themeMode: String = "SYSTEM",
+    onThemeModeChange: (String) -> Unit = {}
 ) {
     ElevatedCard(
         modifier = Modifier
@@ -385,11 +420,11 @@ fun HeaderStatsDashboard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Icon(
-                    imageVector = Icons.Default.DirectionsBike,
-                    contentDescription = "App Logo",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(32.dp)
+                
+                // Beautiful, compact Day/Night selection row
+                ThemeSelectionRow(
+                    currentTheme = themeMode,
+                    onThemeChange = onThemeModeChange
                 )
             }
 
@@ -429,6 +464,71 @@ fun HeaderStatsDashboard(
                     value = String.format("₹%.0f", totalEarnings),
                     icon = Icons.Default.MonetizationOn,
                     modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ThemeSelectionRow(
+    currentTheme: String,
+    onThemeChange: (String) -> Unit
+) {
+    val isSystemDark = isSystemInDarkTheme()
+    val isDark = when (currentTheme) {
+        "LIGHT" -> false
+        "DARK" -> true
+        else -> isSystemDark
+    }
+
+    // Toggle day/night. If on system, toggling goes to the opposite of current system theme.
+    val targetTheme = if (isDark) "LIGHT" else "DARK"
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Main Day/Night Toggle Button
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .clickable { onThemeChange(targetTheme) }
+                .padding(horizontal = 10.dp, vertical = 6.dp)
+                .testTag("theme_toggle_btn"),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = if (isDark) Icons.Default.DarkMode else Icons.Default.LightMode,
+                contentDescription = if (isDark) "Dark Mode Toggle" else "Light Mode Toggle",
+                tint = if (isDark) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.size(18.dp)
+            )
+            Text(
+                text = if (isDark) "Dark" else "Light",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        // Only show "Reset/Auto" button if they manually overrode the theme
+        if (currentTheme != "SYSTEM") {
+            IconButton(
+                onClick = { onThemeChange("SYSTEM") },
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                    .testTag("theme_reset_system"),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Reset to System Theme",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(14.dp)
                 )
             }
         }
@@ -1298,6 +1398,41 @@ fun HistoryRideCard(ride: Ride) {
                     )
                 }
             }
+
+            if (!ride.note.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Description,
+                        contentDescription = "Ride Note",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp).padding(top = 1.dp)
+                    )
+                    Column {
+                        Text(
+                            text = "Note",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = ride.note,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -1714,6 +1849,26 @@ fun ViewReceiptDialog(
                         value = finalCostStr,
                         highlight = true
                     )
+
+                    if (!ride.note.isNullOrBlank()) {
+                        Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                        ) {
+                            Text(
+                                text = "Ride Note",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = ride.note,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
                 }
             }
         },

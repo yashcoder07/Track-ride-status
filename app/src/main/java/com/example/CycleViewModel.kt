@@ -17,6 +17,15 @@ import kotlin.math.ceil
 
 class CycleViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: CycleRepository
+    private val sharedPrefs = application.getSharedPreferences("ride_tracker_prefs", android.content.Context.MODE_PRIVATE)
+
+    private val _themeMode = MutableStateFlow(sharedPrefs.getString("theme_mode", "SYSTEM") ?: "SYSTEM")
+    val themeMode: StateFlow<String> = _themeMode.asStateFlow()
+
+    fun setThemeMode(mode: String) {
+        sharedPrefs.edit().putString("theme_mode", mode).apply()
+        _themeMode.value = mode
+    }
 
     init {
         val db = AppDatabase.getDatabase(application)
@@ -135,7 +144,7 @@ class CycleViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun stopRide(ride: Ride) {
+    fun stopRide(ride: Ride, note: String? = null) {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             val seconds = if (ride.isPaused) {
@@ -148,7 +157,8 @@ class CycleViewModel(application: Application) : AndroidViewModel(application) {
             val updatedRide = ride.copy(
                 endTime = now,
                 finalCost = finalCostVal,
-                isPaused = false
+                isPaused = false,
+                note = if (note.isNullOrBlank()) null else note
             )
             repository.updateRide(updatedRide)
 

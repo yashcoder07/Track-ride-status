@@ -29,26 +29,26 @@ private val DarkColorScheme =
 
 private val LightColorScheme =
   lightColorScheme(
-    primary = EyeFriendlyPrimary,
-    onPrimary = EyeFriendlyOnPrimary,
-    primaryContainer = EyeFriendlyPrimaryContainer,
-    onPrimaryContainer = EyeFriendlyOnPrimaryContainer,
-    secondary = EyeFriendlySecondary,
-    onSecondary = EyeFriendlyOnSecondary,
-    tertiary = EyeFriendlyTertiary,
-    onTertiary = EyeFriendlyOnTertiary,
-    background = EyeFriendlyBackground,
-    onBackground = EyeFriendlyOnBackground,
-    surface = EyeFriendlySurface,
-    onSurface = EyeFriendlyOnSurface,
-    surfaceVariant = EyeFriendlySurfaceVariant,
-    onSurfaceVariant = EyeFriendlyOnBackground,
-    outline = EyeFriendlyOutline
+    primary = ProfessionalPrimary,
+    onPrimary = ProfessionalOnPrimary,
+    primaryContainer = ProfessionalPrimaryContainer,
+    onPrimaryContainer = ProfessionalOnPrimaryContainer,
+    secondary = ProfessionalSecondary,
+    onSecondary = ProfessionalOnSecondary,
+    tertiary = ProfessionalTertiary,
+    onTertiary = ProfessionalOnTertiary,
+    background = ProfessionalBackground,
+    onBackground = ProfessionalOnBackground,
+    surface = ProfessionalSurface,
+    onSurface = ProfessionalOnSurface,
+    surfaceVariant = ProfessionalSurfaceVariant,
+    onSurfaceVariant = ProfessionalOnBackground,
+    outline = ProfessionalOutline
   )
 
 @Composable
 fun MyApplicationTheme(
-  darkTheme: Boolean = false, // Force/default to Light Theme to honor user preference
+  darkTheme: Boolean = isSystemInDarkTheme(),
   // Disable dynamic color so our custom hand-crafted palette is loaded
   dynamicColor: Boolean = false,
   content: @Composable () -> Unit,

@@ -15,5 +15,6 @@ data class Ride(
     val isPaused: Boolean = false,
     val pauseTime: Long? = null,
     val accumulatedTimeSeconds: Long = 0,
-    val finalCost: Double? = null
+    val finalCost: Double? = null,
+    val note: String? = null
 )
